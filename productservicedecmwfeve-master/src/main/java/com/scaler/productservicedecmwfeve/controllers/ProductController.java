@@ -1,6 +1,7 @@
 package com.scaler.productservicedecmwfeve.controllers;
 
 import com.scaler.productservicedecmwfeve.commons.AuthenticationCommons;
+import com.scaler.productservicedecmwfeve.dtos.FakeStoreProductDto;
 import com.scaler.productservicedecmwfeve.dtos.Role;
 import com.scaler.productservicedecmwfeve.dtos.UserDto;
 import com.scaler.productservicedecmwfeve.exceptions.ProductNotExistsException;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.actuate.web.exchanges.HttpExchange;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,11 +28,11 @@ import java.util.List;
 public class ProductController {
     private ProductService productService;
     private RestTemplate restTemplate;
+
     private AuthenticationCommons authenticationCommons;
 
     @Autowired
-    public ProductController(@Qualifier("selfProductService") ProductService productService,
-                             RestTemplate restTemplate,
+    public ProductController(@Qualifier("selfProductService") ProductService productService, RestTemplate restTemplate,
                              AuthenticationCommons authenticationCommons) {
         this.productService = productService;
         this.restTemplate = restTemplate;
@@ -38,80 +40,83 @@ public class ProductController {
     }
 
     @GetMapping() // localhost:8080/products
-    public ResponseEntity<List<Product>> getAllProducts() {
-////        restTemplate.delete(null);
-//
+    public ResponseEntity<Page<Product>> getAllProducts(//@RequestHeader("AuthenticationToken") String token,
+                                                        @RequestParam("pageNumber") int pageNumber,
+                                                        @RequestParam("pageSize") int pageSize,
+                                                        @RequestParam("sortBy") String sortBy,
+                                                        @RequestParam("sortOrder") String order) throws ProductNotExistsException {
+//        restTemplate.delete(null);
+
 //        UserDto userDto = authenticationCommons.validateToken(token);
 //
-//        if (userDto == null) {
+//        if(authenticationCommons.validateToken(token) == null) {
 //            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
 //        }
 //
 //        boolean isAdmin = false;
 //
-//        for (Role role: userDto.getRoles()) {
-//            if (role.getName().equals("ADMIN")) {
+//        for(Role role:userDto.getRoles()) {
+//            if(role.getName().equals("ADMIN")) {
 //                isAdmin = true;
 //                break;
 //            }
 //        }
 //
-//        if (!isAdmin) return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+//        if(!isAdmin) {
+//            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+//        }
 
-        List<Product> products = productService.getAllProducts(); // o p q
+        Page<Product> products = productService.getAllProducts(pageNumber, pageSize, "", "");
 
-        List<Product> finalProducts = new ArrayList<>();
-
-        for (Product p: products) { // o  p q
-            p.setTitle("Hello" + p.getTitle());
-            finalProducts.add(p);
-        }
-
-        ResponseEntity<List<Product>> response = new ResponseEntity<>(
-                finalProducts, HttpStatus.FORBIDDEN
+        ResponseEntity<Page<Product>> response = new ResponseEntity<>(
+                products, HttpStatus.FORBIDDEN
         );
+
         return response;
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Product> getSingleProduct(@PathVariable("id") Long id) throws ProductNotExistsException {
-//        throw new RuntimeException("SOmething went wrong");
-//        try {
-            return new ResponseEntity<>(
-                    productService.getSingleProduct(id),
-                    HttpStatus.OK
-            );
-//        } catch (ArithmeticException exception) {
-//            ResponseEntity<Product> response = new ResponseEntity<>(HttpStatus.NOT_FOUND);
-//            return response;
-//        } catch (ArrayIndexOutOfBoundsException exception) {
-//
-//        }
-
+        return new ResponseEntity<>(
+                productService.getSingleProduct(id),
+                HttpStatus.OK
+        );
     }
 
     @PostMapping()
-    public Product addNewProduct(@RequestBody Product product) {
-        return productService.addNewProduct(product);
+    public ResponseEntity<Product> addNewProduct(@RequestBody Product product) {
+        return new ResponseEntity<>(
+                productService.addNewProduct(product),
+                HttpStatus.OK
+        );
     }
 
     @PatchMapping("/{id}")
-    public Product updateProduct(@PathVariable("id") Long id, @RequestBody Product product) {
-        return new Product();
+    public ResponseEntity<Product> updateProduct(@PathVariable("id") Long id, @RequestBody Product product) {
+        return new ResponseEntity<>(
+                productService.updateProduct(id, product),
+                HttpStatus.OK
+        );
     }
 
     @PutMapping("/{id}")
-    public Product replaceProduct(@PathVariable("id") Long id, @RequestBody Product product) {
-        return new Product();
+    public ResponseEntity<Product> replaceProduct(@PathVariable("id") Long id, @RequestBody Product product) throws ProductNotExistsException {
+        return new ResponseEntity<>(
+                productService.replaceProduct(id, product),
+                HttpStatus.OK
+        );
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProduct(@PathVariable("id") Long id) {
-        return new ResponseEntity<>(HttpStatus.OK);
+    public ResponseEntity<Boolean> deleteProduct(@PathVariable("id") Long id) throws ProductNotExistsException {
+        return new ResponseEntity<Boolean>(
+                productService.deleteProduct(id),
+                HttpStatus.OK
+        );
     }
 
-//    @ExceptionHandler(ProductNotExistsException.class)
-//    public ResponseEntity<Void> handleProductNotExistException() {
-//        return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-//    }
+    @ExceptionHandler(ProductNotExistsException.class)
+    public ResponseEntity<Void> handleProductNotExistException() {
+        return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+    }
 }
