@@ -49,11 +49,9 @@ public class FakeStoreProductService implements ProductService {
 //        int a = 1 / 0;
 
         Product p = (Product) redisTemplate.opsForHash().get("PRODUCTS", "PRODUCT_"+id);
-
         if(p != null) {
             return p;
         }
-
         FakeStoreProductDto productDto = restTemplate.getForObject(
                 "https://fakestoreapi.com/products/" + id,
                 FakeStoreProductDto.class
@@ -187,4 +185,4 @@ public class FakeStoreProductService implements ProductService {
     }
 }
 
-// Break till 10:35
+
